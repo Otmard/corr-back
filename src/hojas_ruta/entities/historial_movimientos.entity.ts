@@ -34,7 +34,7 @@ export class HistorialMovimientos {
 		onUpdate: 'CASCADE',
 		nullable: false,
 	})
-	hojaRuta: number;
+	hojaRuta: HojasRuta;
 
 	@Column()
 	accion: string;

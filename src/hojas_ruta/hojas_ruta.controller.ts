@@ -40,6 +40,12 @@ export class HojasRutaController {
 		return this.hojasRutaService.create(createHojasRutaDto);
 	}
 
+	@Get('archivadas/:idUser')
+	getArchivadas(@Param('idUser') idUser: string) {
+
+		return this.hojasRutaService.getArchivadas(idUser);
+	}
+
 	@Get('buzon/:idUser')
 	getBuzon(@Param('idUser') idUser: string) {
 		return this.hojasRutaService.getBuzon(idUser);

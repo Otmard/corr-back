@@ -113,7 +113,7 @@ export class HojasRutaService {
 		const historial = await this.historialMovimientosRepository.create({
 			procedencia: procedencia,
 			destino: destino,
-			hojaRuta: idHojaRuta,
+			hojaRuta,
 			instruccion: derivarHojasRutaDto.instruccion,
 			documento: documento,
 			accion: 'DERIVADA',
@@ -146,14 +146,14 @@ export class HojasRutaService {
 			);
 		}
 		const ultimoMovimiento = await this.historialMovimientosRepository.findOne({
-			where: { hojaRuta: recibirHojasRutaDto.id },
+			where: { hojaRuta: { id: recibirHojasRutaDto.id } },
 			order: { id: 'DESC' },
 			relations: ['procedencia', 'destino', 'documento'],
 		});
 
 		// Crear un nuevo objeto a partir del último movimiento pero con cambios
 		const nuevoMovimiento = this.historialMovimientosRepository.create({
-			hojaRuta: recibirHojasRutaDto.id,
+			hojaRuta,
 			destino: ultimoMovimiento.destino,
 			procedencia: ultimoMovimiento.destino,
 			instruccion: ultimoMovimiento.instruccion,
@@ -228,6 +228,20 @@ export class HojasRutaService {
 
 		return pendientes;
 	}
+	async getArchivadas(idUser: string) {
+		const archivados = await this.hojasRutaRepository.find({
+			where: { responsableActual: { uuid: idUser }, estado: Estado.ARCHIVADA },
+			relations: [
+				'historialMovimientos',
+				'historialMovimientos.procedencia',
+				'emisor',
+			],
+			order: {
+				historialMovimientos: { createdAt: 'DESC' }, // Ordenar por la fecha de historialMovimientos en orden descendente
+			},
+		});
+		return archivados;
+	}
 
 	async getDerivadas(idUser: string) {
 		const hojasRuta = await this.hojasRutaRepository.find({
@@ -237,20 +251,24 @@ export class HojasRutaService {
 					// accion: 'DERIVADA',
 				},
 			},
-			relations: ['historialMovimientos','historialMovimientos.procedencia','emisor','responsableActual'],
+			relations: [
+				'historialMovimientos',
+				'historialMovimientos.procedencia',
+				'emisor',
+				'responsableActual',
+			],
 			order: {
 				historialMovimientos: { createdAt: 'DESC' }, // Ordenar por la fecha de historialMovimientos en orden descendente
 			},
 		});
-		const hojasRutaSelecionadas =[]
+		const hojasRutaSelecionadas = [];
 		for (const hojaRuta of hojasRuta) {
-			console.log((hojaRuta.historialMovimientos[0].procedencia.uuid === idUser));
 			if (hojaRuta.historialMovimientos[0].procedencia.uuid === idUser) {
 				hojasRutaSelecionadas.push(hojaRuta);
 			}
 		}
-		return hojasRutaSelecionadas
-		
+		return hojasRutaSelecionadas;
+
 		// return hojasRuta;
 		// return this.hojasRutaRepository.find({
 		// 	where: {
@@ -315,6 +333,24 @@ export class HojasRutaService {
 	}
 
 	async cancelarDerivar(cancelarDerivarDto: CancelarDerivarDto) {
+		const historial = await this.historialMovimientosRepository.findOne({
+			where: {
+				id: cancelarDerivarDto.idHistorial,
+			},
+			relations: ['procedencia', 'hojaRuta'],
+		});
+		const hojaRuta = await this.hojasRutaRepository.findOne({
+			where: { id: historial.hojaRuta.id },
+		});
+		if (!historial || !hojaRuta) {
+			throw new BadRequestException(
+				`El historial de movimiento no existe o no pertenece a la hoja de ruta`,
+			);
+		}
+		await this.hojasRutaRepository.update(hojaRuta.id, {
+			responsableActual: historial.procedencia,
+			estado: Estado.RECIBIDA,
+		});
 		return await this.historialMovimientosRepository.softDelete(
 			cancelarDerivarDto.idHistorial,
 		);
