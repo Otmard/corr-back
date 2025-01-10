@@ -1,12 +1,14 @@
 import {
 	ArrayNotEmpty,
 	IsArray,
+	IsEnum,
 	IsInt,
 	IsNotEmpty,
 	IsOptional,
 	IsString,
 	IsUrl,
 } from 'class-validator';
+import { Tipo } from '../entities/documento.entity';
 
 export class CreateDocumentoDto {
 	@IsString()
@@ -24,4 +26,12 @@ export class CreateDocumentoDto {
 	@IsArray()
 	@IsOptional()
 	adjuntos: number[];
+
+	@IsString()
+	@IsNotEmpty()
+	referencia: string;
+
+	@IsEnum(Tipo)
+	@IsNotEmpty()
+	tipo: Tipo;
 }

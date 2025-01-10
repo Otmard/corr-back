@@ -18,5 +18,11 @@ export class CreateHojasRutaDto {
 	@IsOptional()
 	prioridad: Prioridad;
 
-
+	@IsString()
+	@IsNotEmpty()
+	referencia: string;
+	
+	@IsString()
+	@IsNotEmpty()
+	cite: string;
 }

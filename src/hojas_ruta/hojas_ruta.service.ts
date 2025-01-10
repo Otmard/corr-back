@@ -13,6 +13,8 @@ import { HistorialMovimientos } from './entities/historial_movimientos.entity';
 import { DerivarHojaRutaDto } from './dto/derivar_hoja_ruta.dto';
 import { Documento } from 'src/documentos/entities/documento.entity';
 import { RecibirHojaRutaDto } from './dto/recibir-hoja_ruta.dto';
+import { ArchivarHojaRutaDto } from './dto/archivar_hoja_ruta.dto';
+import { CancelarDerivarDto } from './dto/cancelar_derivar.dts';
 
 @Injectable()
 export class HojasRutaService {
@@ -52,6 +54,8 @@ export class HojasRutaService {
 			responsableActual,
 			estado,
 			prioridad,
+			cite: createHojasRutaDto.cite,
+			referencia: createHojasRutaDto.referencia,
 		});
 
 		const nuevaHojaRuta = await this.hojasRutaRepository.save(hojaRuta);
@@ -117,7 +121,10 @@ export class HojasRutaService {
 
 		await this.historialMovimientosRepository.save(historial);
 
-		return hojaRuta;
+		return this.hojasRutaRepository.findOne({
+			where: { id: idHojaRuta },
+			relations: ['responsableActual', 'emisor', 'historialMovimientos'],
+		});
 	}
 
 	async recibir(recibirHojasRutaDto: RecibirHojaRutaDto) {
@@ -148,7 +155,7 @@ export class HojasRutaService {
 		const nuevoMovimiento = this.historialMovimientosRepository.create({
 			hojaRuta: recibirHojasRutaDto.id,
 			destino: ultimoMovimiento.destino,
-			procedencia: ultimoMovimiento.procedencia,
+			procedencia: ultimoMovimiento.destino,
 			instruccion: ultimoMovimiento.instruccion,
 			documento: ultimoMovimiento.documento,
 			accion: 'RECIBIDA', // Modifica solo la acción
@@ -221,6 +228,52 @@ export class HojasRutaService {
 
 		return pendientes;
 	}
+
+	async getDerivadas(idUser: string) {
+		const hojasRuta = await this.hojasRutaRepository.find({
+			where: {
+				estado: Estado.DERIVADA,
+				historialMovimientos: {
+					// accion: 'DERIVADA',
+				},
+			},
+			relations: ['historialMovimientos','historialMovimientos.procedencia','emisor','responsableActual'],
+			order: {
+				historialMovimientos: { createdAt: 'DESC' }, // Ordenar por la fecha de historialMovimientos en orden descendente
+			},
+		});
+		const hojasRutaSelecionadas =[]
+		for (const hojaRuta of hojasRuta) {
+			console.log((hojaRuta.historialMovimientos[0].procedencia.uuid === idUser));
+			if (hojaRuta.historialMovimientos[0].procedencia.uuid === idUser) {
+				hojasRutaSelecionadas.push(hojaRuta);
+			}
+		}
+		return hojasRutaSelecionadas
+		
+		// return hojasRuta;
+		// return this.hojasRutaRepository.find({
+		// 	where: {
+		// 		estado: Estado.DERIVADA,
+		// 		historialMovimientos: {
+		// 			accion: 'DERIVADA',
+		// 			procedencia: {
+		// 				uuid: idUser,
+		// 			},
+		// 		},
+		// 	},
+		// 	relations: [
+		// 		'historialMovimientos',
+		// 		'historialMovimientos.procedencia',
+		// 		'emisor',
+		// 		'responsableActual',
+		// 		'historialMovimientos.documento.archivo.archivo',
+		// 	],
+		// 	order: {
+		// 		historialMovimientos: { createdAt: 'DESC' }, // Ordenar por la fecha de historialMovimientos en orden descendente
+		// 	},
+		// });
+	}
 	async getStats(idUser: string) {
 		const stats = await this.hojasRutaRepository
 			.createQueryBuilder('hojaRuta')
@@ -243,6 +296,28 @@ export class HojasRutaService {
 		});
 
 		return completeStats;
+	}
+
+	async archivar(archivarDto: ArchivarHojaRutaDto) {
+		const user = await this.userRepository.findOne({
+			where: { uuid: archivarDto.idUser },
+		});
+		if (!user) {
+			throw new BadRequestException(
+				`El usuario ${archivarDto.idUser} no existe`,
+			);
+		}
+
+		return await this.hojasRutaRepository.update(archivarDto.id, {
+			estado: Estado.ARCHIVADA,
+			responsableActual: user,
+		});
+	}
+
+	async cancelarDerivar(cancelarDerivarDto: CancelarDerivarDto) {
+		return await this.historialMovimientosRepository.softDelete(
+			cancelarDerivarDto.idHistorial,
+		);
 	}
 	findAll() {
 		return `This action returns all hojasRuta`;

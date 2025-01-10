@@ -12,11 +12,21 @@ import { CreateHojasRutaDto } from './dto/create-hojas_ruta.dto';
 import { UpdateHojasRutaDto } from './dto/update-hojas_ruta.dto';
 import { DerivarHojaRutaDto } from './dto/derivar_hoja_ruta.dto';
 import { RecibirHojaRutaDto } from './dto/recibir-hoja_ruta.dto';
+import { ArchivarHojaRutaDto } from './dto/archivar_hoja_ruta.dto';
+import { CancelarDerivarDto } from './dto/cancelar_derivar.dts';
 
 @Controller('hojas-ruta')
 export class HojasRutaController {
 	constructor(private readonly hojasRutaService: HojasRutaService) {}
+	@Post('archivar')
+	archivar(@Body() archivarHojaRutaDto: ArchivarHojaRutaDto) {
+		return this.hojasRutaService.archivar(archivarHojaRutaDto);
+	}
 
+	@Post('cancelar-derivar')
+	cancelarDerivar(@Body() archivarHojaRutaDto: CancelarDerivarDto) {
+		return this.hojasRutaService.cancelarDerivar(archivarHojaRutaDto);
+	}
 	@Post('derivar')
 	derivar(@Body() derivarHojasRutaDto: DerivarHojaRutaDto) {
 		return this.hojasRutaService.derivar(derivarHojasRutaDto);
@@ -29,9 +39,14 @@ export class HojasRutaController {
 	create(@Body() createHojasRutaDto: CreateHojasRutaDto) {
 		return this.hojasRutaService.create(createHojasRutaDto);
 	}
+
 	@Get('buzon/:idUser')
 	getBuzon(@Param('idUser') idUser: string) {
 		return this.hojasRutaService.getBuzon(idUser);
+	}
+	@Get('derivadas/:idUser')
+	getDerivadas(@Param('idUser') idUser: string) {
+		return this.hojasRutaService.getDerivadas(idUser);
 	}
 	@Get('pendientes/:idUser')
 	getPendientes(@Param('idUser') idUser: string) {

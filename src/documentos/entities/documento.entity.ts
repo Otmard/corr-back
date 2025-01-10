@@ -31,6 +31,9 @@ export class Documento {
 	@Column({ nullable: false, type: 'enum', enum: Tipo })
 	tipo: Tipo;
 
+	@Column()
+	referencia: string;
+
 	@ManyToOne(() => User, (user) => user.documento, { onUpdate: 'CASCADE' })
 	emisor: User;
 

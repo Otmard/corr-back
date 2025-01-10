@@ -40,6 +40,12 @@ export class HojasRuta {
 	@Column({ nullable: false, type: 'enum', enum: Estado })
 	estado: Estado;
 
+	@Column()
+	referencia: string;
+
+	@Column()
+	cite: string;
+
 	@Column({
 		nullable: false,
 		type: 'enum',
