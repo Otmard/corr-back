@@ -355,8 +355,16 @@ export class HojasRutaService {
 			cancelarDerivarDto.idHistorial,
 		);
 	}
-	findAll() {
-		return `This action returns all hojasRuta`;
+	async findAll() {
+		return await this.hojasRutaRepository.find({
+			relations: [
+				'historialMovimientos',
+				'emisor',
+				'responsableActual',
+				'historialMovimientos.documento.archivo.archivo',
+				'historialMovimientos.procedencia'
+			],
+		});
 	}
 
 	findOne(id: number) {
